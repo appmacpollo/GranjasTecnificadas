@@ -316,10 +316,11 @@ public class Proceso {
             this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, String.join("|", variablesAusentes),
                     "Ausencia de variables", "", "", false);
         } else {
+            //Valido es el porcentaje de mortalidad contra la tolerancia, el calculo entiendo lo hago es para la cantidad que se envia a SAP
             Double mortalidadFemale = broilerGroupMortalityFemaleDouble * broilerGroupTotalStockedFemaleDouble;
             Double mortalidadMale = broilerGroupMortalityMaleDouble * broilerGroupTotalStockedMaleDouble;
-            if (mortalidadFemale > 0 && mortalidadMale > 0) {
-                Double mortalidadMixto = (mortalidadFemale + mortalidadMale) / 2;
+            if (broilerGroupMortalityFemaleDouble > 0 && broilerGroupMortalityMaleDouble > 0) {
+                Double mortalidadMixto = (broilerGroupMortalityFemaleDouble + broilerGroupMortalityMaleDouble) / 2;
                 if (mortalidadMixto < validacionMixto.getMortalidadMinima() || mortalidadMixto > validacionMixto.getMortalidadMaxima()) {
                     this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BroilerGroupMortalityFemale|BroilerGroupTotalStockedFemale|BroilerGroupMortalityMale|BroilerGroupTotalStockedMale",
                             "La Mortalidad Mixta " + mortalidadMixto + " para la edad " + edad + " no cumple con la tabla de Tolerancia", "", "", false);
@@ -328,7 +329,7 @@ public class Proceso {
                             "Se registra mortalidad Mixta", "", "", true);
                 }
             } else if (!broilerGroupMortalityFemale.isEmpty() && !broilerGroupTotalStockedFemale.isEmpty()) {
-                if (mortalidadFemale < validacionHembra.getMortalidadMinima() || mortalidadFemale > validacionHembra.getMortalidadMaxima()) {
+                if (broilerGroupMortalityFemaleDouble < validacionHembra.getMortalidadMinima() || broilerGroupMortalityFemaleDouble > validacionHembra.getMortalidadMaxima()) {
                     this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BroilerGroupMortalityFemale|BroilerGroupTotalStockedFemale",
                             "La Mortalidad Hembra " + mortalidadFemale + " para la edad " + edad + " no cumple con la tabla de Tolerancia", "", "", false);
                 } else {
@@ -336,14 +337,14 @@ public class Proceso {
                             "Se registra mortalidad Hembra", "", "", true);
                 }
             } else if (!broilerGroupMortalityMale.isEmpty() && !broilerGroupTotalStockedMale.isEmpty()) {
-                if (mortalidadMale < validacionMacho.getMortalidadMinima() || mortalidadMale > validacionMacho.getMortalidadMaxima()) {
+                if (broilerGroupMortalityMaleDouble < validacionMacho.getMortalidadMinima() || broilerGroupMortalityMaleDouble > validacionMacho.getMortalidadMaxima()) {
                     this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BroilerGroupMortalityMale|BroilerGroupTotalStockedMale",
-                            "La Mortalidad Macho " + mortalidadMale + " para la edad " + edad + " no cumple con la tabla de Tolerancia", "", "", false);
+                            "La Mortalidad Macho " + broilerGroupMortalityMaleDouble + " para la edad " + edad + " no cumple con la tabla de Tolerancia", "", "", false);
                 } else {
                     this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BroilerGroupMortalityMale|BroilerGroupTotalStockedMale",
                             "Se registra mortalidad Macho", "", "", true);
                 }
-            }
+            } 
         }
     }
 
