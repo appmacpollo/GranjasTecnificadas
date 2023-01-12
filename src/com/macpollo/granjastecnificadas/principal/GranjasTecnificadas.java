@@ -24,7 +24,7 @@ public class GranjasTecnificadas {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        String appId = "DemonioTorreCentralFRIMAC";
+        String appId = "GranjasTecnificadas";
         boolean ejecutando;
 
         try {

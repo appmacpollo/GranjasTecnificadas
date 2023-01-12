@@ -55,9 +55,9 @@ public class Conexion {
                     + "encrypt=false;"
                     + "trustServerCertificate=true;"
                     + "loginTimeout=5;";
-
             con = DriverManager.getConnection(url);
         } catch (Exception e) {
+            e.printStackTrace(System.err);
             Log.escribir("Error generando la conexion a la Base de Datos" + e.getMessage());
         }
         return con;

@@ -1,0 +1,6 @@
+
+**** Error file opened at 20221215 093154 Colombia Time Rel. 3.0.17 (2017-07-17) [721.913]
+Error:  >Thu Dec 15 09:31:54,478<    >RfcGetException rc (7) message: The function module "ZGWS_LOGGRANJASTECNI" cannot be used for 'remote' calls.
+<RfcGetException
+
+

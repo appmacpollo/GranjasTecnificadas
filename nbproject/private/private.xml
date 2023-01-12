@@ -5,9 +5,11 @@
         <group>
             <file>file:/D:/Usuario/Documentos/NetBeansProjects/GranjasTecnificadas/src/com/macpollo/granjastecnificadas/general/Proceso.java</file>
             <file>file:/D:/Usuario/Documentos/NetBeansProjects/GranjasTecnificadas/src/com/macpollo/granjastecnificadas/models/LogEnvioSap.java</file>
+            <file>file:/D:/Usuario/Documentos/NetBeansProjects/GranjasTecnificadas/config/ConexionSAP.jcoDestination</file>
+            <file>file:/D:/Usuario/Documentos/NetBeansProjects/GranjasTecnificadas/config/ConexionSAP_calidad.jcoDestination</file>
+            <file>file:/D:/Usuario/Documentos/NetBeansProjects/GranjasTecnificadas/src/com/macpollo/granjastecnificadas/principal/PruebasClass.java</file>
             <file>file:/D:/Usuario/Documentos/NetBeansProjects/GranjasTecnificadas/src/com/macpollo/granjastecnificadas/componentes/Automatico.java</file>
-            <file>file:/D:/Usuario/Documentos/NetBeansProjects/GranjasTecnificadas/src/com/macpollo/granjastecnificadas/models/LoteGalponVariable.java</file>
-            <file>file:/D:/Usuario/Documentos/NetBeansProjects/GranjasTecnificadas/src/com/macpollo/granjastecnificadas/principal/GranjasTecnificadas.java</file>
+            <file>file:/D:/Usuario/Documentos/NetBeansProjects/GranjasTecnificadas/config/basedatos.properties</file>
         </group>
     </open-files>
 </project-private>

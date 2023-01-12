@@ -18,6 +18,7 @@ public class LogEnvioSap {
 
     private final String tabla = "tbllogenviosap";
 
+    private String granjaCompleto;
     private String granja;
     private String galpon;
     private String lote;
@@ -28,12 +29,14 @@ public class LogEnvioSap {
     private String docSapTecnico;
     private String docSapInventario;
     private Boolean estado;
+    private String respuestaenviosap;
 
     public LogEnvioSap() {
     }
 
-    public LogEnvioSap(String granja, String galpon, String lote, Integer edad, String variable, Date fecha, String observacion,
+    public LogEnvioSap(String granjaCompleto, String granja, String galpon, String lote, Integer edad, String variable, Date fecha, String observacion,
             String docSapTecnico, String docSapInventario, boolean estado) {
+        this.granjaCompleto = granjaCompleto;
         this.granja = granja;
         this.galpon = galpon;
         this.lote = lote;
@@ -44,6 +47,15 @@ public class LogEnvioSap {
         this.docSapTecnico = docSapTecnico;
         this.docSapInventario = docSapInventario;
         this.estado = estado;
+        this.respuestaenviosap = "";
+    }
+
+    public String getGranjaCompleto() {
+        return granjaCompleto;
+    }
+
+    public void setGranjaCompleto(String granjaCompleto) {
+        this.granjaCompleto = granjaCompleto;
     }
 
     public String getGranja() {
@@ -126,22 +138,39 @@ public class LogEnvioSap {
         this.estado = estado;
     }
 
+    public String getRespuestaenviosap() {
+        return respuestaenviosap;
+    }
+
+    public void setRespuestaenviosap(String respuestaenviosap) {
+        this.respuestaenviosap = respuestaenviosap;
+    }
+
     public boolean guardarObjeto(Connection con) throws SQLException {
         boolean result = false;
-        try ( PreparedStatement ps = con.prepareStatement("insert into " + this.tabla + " (granja, galpon, lote, edad, variable, fecha, observacion, docsaptecnico, docsapinventario) VALUES (?,?,?,?,?,?,?,?,?)")) {
-            ps.setString(1, granja);
-            ps.setString(2, galpon);
-            ps.setString(3, lote);
-            ps.setInt(4, edad);
-            ps.setString(5, variable);
-            ps.setTimestamp(6, new Timestamp(fecha.getTime()));
-            ps.setString(7, observacion);
-            ps.setString(8, docSapTecnico);
-            ps.setString(9, docSapInventario);
+        String[] arVariables = variable.split("\\|");
+        for (String variableInsercion : arVariables) {
+            try ( PreparedStatement ps = con.prepareStatement("insert into " + this.tabla + " (granja, galpon, lote, edad, variable, fecha, observacion, docsaptecnico, docsapinventario, respuestaenviosap) VALUES (?,?,?,?,?,?,?,?,?,?)")) {
+                ps.setString(1, granja);
+                ps.setString(2, galpon);
+                ps.setString(3, lote);
+                ps.setInt(4, edad);
+                ps.setString(5, variableInsercion);
+                ps.setTimestamp(6, new Timestamp(fecha.getTime()));
+                ps.setString(7, observacion);
+                ps.setString(8, docSapTecnico);
+                ps.setString(9, docSapInventario);
+                ps.setString(10, respuestaenviosap);
 
-            result = ps.execute();
+                result = ps.execute();
+            }
         }
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "LogEnvioSap{" + "tabla=" + tabla + ", granja=" + granja + ", galpon=" + galpon + ", lote=" + lote + ", edad=" + edad + ", variable=" + variable + ", fecha=" + fecha + ", observacion=" + observacion + ", docSapTecnico=" + docSapTecnico + ", docSapInventario=" + docSapInventario + ", estado=" + estado + ", respuestaenviosap=" + respuestaenviosap + '}';
     }
 
 }
