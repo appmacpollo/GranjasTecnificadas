@@ -55,11 +55,11 @@ public class Proceso {
         //Peso
         arParametrosConsulta.addAll(Arrays.asList("BirdScaleWeight1", "BirdScaleWeight2", "BroilerGroupWeightFemale", "BroilerGroupWeightMale"));
         //Mortalidad
-        arParametrosConsulta.addAll(Arrays.asList("BroilerGroupMortalityFemale", "BroilerGroupMortalityMale", "BroilerGroupTotalStockedFemale",
-                "BroilerGroupTotalStockedMale", "BirdsDeadCulledPerDayFemale", "BirdsDeadCulledPerDayMale"));
+        arParametrosConsulta.addAll(Arrays.asList("BroilerGroupMortalityFemale", "BroilerGroupMortalityMale", "BroilerGroupMortalityAsHatched",
+                "BirdsDeadCulledPerDayFemale", "BirdsDeadCulledPerDayMale", "BirdsDeadCulledPerDayAsHatched"));
+        //Cantidad y sexo Encasetamiento
+        arParametrosConsulta.addAll(Arrays.asList("BroilerGroupTotalStockedFemale", "BroilerGroupTotalStockedMale", "BroilerGroupTotalStockedAsHatched"));
 
-        arParametrosConsulta.add("");
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         Calendar cal = Calendar.getInstance();
         cal.setTime(new Date());
         cal.add(Calendar.DATE, -1);
@@ -162,8 +162,11 @@ public class Proceso {
                 Integer edad = loteGalponVaribale.getEdad();
 
                 String[] splitLoteCompleto = loteGalponVaribale.getLote().split("-");
-                String opsap = splitLoteCompleto[1];
+                String opsap = "";
                 String camaReciclada = "";
+                if (splitLoteCompleto.length >= 2) {
+                    opsap = splitLoteCompleto[1];
+                }
                 if (splitLoteCompleto.length > 2) {
                     camaReciclada = splitLoteCompleto[2];
                     camaReciclada = camaReciclada.trim();
@@ -210,16 +213,21 @@ public class Proceso {
             ArrayList<RetornoDatosTecnicos> retornoDatosTecnicos = new ArrayList<>();
             if (!arDatosTecnicosSap.isEmpty()) {
                 retornoDatosTecnicos = this.registrarDatosTecnicosSap(arDatosTecnicosSap);
-                System.err.println("ESTO RETORNO SAPPP!!!!!!!!!!!!!!!!!------------");
+                System.out.println("ESTO RETORNO SAPPP!!!!!!!!!!!!!!!!!------------");
                 retornoDatosTecnicos.forEach(System.out::println);
-                System.err.println("FIN DEL RETORNO DE SAPPP!!!!!!!!!!!!!!!!!------------");
+                System.out.println("FIN DEL RETORNO DE SAPPP!!!!!!!!!!!!!!!!!------------");
             }
-//            ArrayList<RetornoDatosTecnicos> retornoDatosTecnicos = new ArrayList<>();
 //            retornoDatosTecnicos.add(new RetornoDatosTecnicos("E", "ZDA", 0, "Falta Peso Galpon: 3 Div: 1 Fecha: 20221210", "",
 //                    0, "Falta Peso Galpon: 3 Div: 1 Fecha: 20221210", "", "", "", "", 0, "", ""));
 //            retornoDatosTecnicos.add(new RetornoDatosTecnicos("S", "ZDA", 0, "Doc.Tecnico: 0003297638", "",
 //                    0, "Doc.Tecnico: 0003297638", "", "", "", "", 0, "", ""));
+
+            String retornoCompleto = retornoDatosTecnicos.stream()
+                    .map(x -> x.getMessage()).collect(Collectors.joining("|"));
             for (RetornoDatosTecnicos retornoDatosTecnico : retornoDatosTecnicos) {
+                arLogEnvioSap.stream().filter(x -> x.getGranja().equals(granja) && x.getEstado()).forEach((logEnvio) -> {
+                    logEnvio.setRespuestaenviosap(retornoCompleto);
+                });
                 if (retornoDatosTecnico.getType().equals("S")) {
                     Pattern pattern = Pattern.compile("[0-9]{10}");
                     Matcher matcher = pattern.matcher(retornoDatosTecnico.getMessage());
@@ -273,20 +281,22 @@ public class Proceso {
         String feedPerAnimalPerDay = this.obtenerVariableDeHash(hashDatosGranja, granja, galpon, "FeedPerAnimalPerDay");
         String broilerGroupTotalStockedFemale = this.obtenerVariableDeHash(hashDatosGranja, granja, galpon, "BroilerGroupTotalStockedFemale");
         String broilerGroupTotalStockedMale = this.obtenerVariableDeHash(hashDatosGranja, granja, galpon, "BroilerGroupTotalStockedMale");
+        String broilerGroupTotalStockedAsHatched = this.obtenerVariableDeHash(hashDatosGranja, granja, galpon, "BroilerGroupTotalStockedAsHatched");
 
         Double feedTotalPerDayDouble = Objects.isNull(feedTotalPerDay) ? 0.0 : Double.valueOf(feedTotalPerDay);
         Double feedPerAnimalPerDayDouble = Objects.isNull(feedPerAnimalPerDay) ? 0.0 : Double.valueOf(feedPerAnimalPerDay);
 
         Double broilerGroupTotalStockedFemaleDouble = Objects.isNull(broilerGroupTotalStockedFemale) ? 0.0 : Double.valueOf(broilerGroupTotalStockedFemale);
         Double broilerGroupTotalStockedMaleDouble = Objects.isNull(broilerGroupTotalStockedMale) ? 0.0 : Double.valueOf(broilerGroupTotalStockedMale);
+        Double broilerGroupTotalStockedAsHatchedDouble = Objects.isNull(broilerGroupTotalStockedAsHatched) ? 0.0 : Double.valueOf(broilerGroupTotalStockedAsHatched);
 
         String encasetamiento = "";
-        if (broilerGroupTotalStockedFemaleDouble > 0 && broilerGroupTotalStockedMaleDouble > 0) {
-            encasetamiento = "X";
+        if (broilerGroupTotalStockedMaleDouble > 0) {
+            encasetamiento = "M";
         } else if (broilerGroupTotalStockedFemaleDouble > 0) {
             encasetamiento = "H";
-        } else if (broilerGroupTotalStockedMaleDouble > 0) {
-            encasetamiento = "M";
+        } else if (broilerGroupTotalStockedAsHatchedDouble > 0) {
+            encasetamiento = "X";
         }
 
         Boolean existeError = false;
@@ -294,6 +304,21 @@ public class Proceso {
         if (Objects.isNull(siloName) || feedTotalPerDayDouble == 0 || feedPerAnimalPerDayDouble == 0) {
             if (Objects.isNull(siloName)) {
                 this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "SiloName1", "Ausencia de variable", "", "", false);
+            } else {
+                //Validacion SiloName
+                String[] splitSiloName = siloName.split("-");
+                if (splitSiloName.length < 2) {
+                    this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "SiloName1",
+                            "El SiloName1 no contiene la estructura 'Material-Lote' - SiloName1 => " + siloName, "", "", false);
+                } else {
+                    String materialConsumo = splitSiloName[0].trim();
+                    String loteConsumo = splitSiloName[1].trim();
+                    TablaAlimento alimentoSilo = arAlimentos.stream().filter(x -> x.getMaterial().equals(materialConsumo) && x.getLote().equals(loteConsumo)).findFirst().orElse(null);
+                    if (alimentoSilo == null) {
+                        this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "SiloName1",
+                                "No se encontro alimento asociado al material " + materialConsumo + " y lote " + loteConsumo, "", "", false);
+                    }
+                }
             }
             if (feedTotalPerDayDouble == 0) {
                 this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "FeedTotalPerDay", "Ausencia de variable", "", "", false);
@@ -308,87 +333,110 @@ public class Proceso {
                 if (encasetamiento.equals("X")) {
                     if (feedPerAnimalPerDayDouble < validacionMixto.getConsumoMinimo() || feedPerAnimalPerDayDouble > validacionMixto.getConsumoMaximo()) {
                         this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "FeedPerAnimalPerDay",
-                                "El Consumo " + feedPerAnimalPerDayDouble + " con encasetamiento mixto para la edad " + edad + " no cumple con la tabla de Tolerancia", "", "", false);
+                                "El Consumo " + feedPerAnimalPerDayDouble + "gr por ave con encasetamiento Mixto no cumple con la tabla de Tolerancia", "", "", false);
                         existeError = true;
                     } else {
-                        this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "FeedPerAnimalPerDay", "El consumo para encasetamiento Mixto cumple con la tolerancia", "", "", true);
+                        this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "FeedPerAnimalPerDay", "El Consumo " + feedPerAnimalPerDayDouble + "gr por ave para encasetamiento Mixto cumple con la tolerancia", "", "", true);
                     }
                 } else if (encasetamiento.equals("H")) {
                     if (feedPerAnimalPerDayDouble < validacionHembra.getConsumoMinimo() || feedPerAnimalPerDayDouble > validacionHembra.getConsumoMaximo()) {
                         this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "FeedPerAnimalPerDay",
-                                "El Consumo " + feedPerAnimalPerDayDouble + " con encasetamiento Hembra para la edad " + edad + " no cumple con la tabla de Tolerancia", "", "", false);
+                                "El Consumo " + feedPerAnimalPerDayDouble + "gr por ave con encasetamiento Hembra no cumple con la tabla de Tolerancia", "", "", false);
                         existeError = true;
                     } else {
-                        this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "FeedPerAnimalPerDay", "El consumo para encasetamiento Hembra cumple con la tolerancia", "", "", true);
+                        this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "FeedPerAnimalPerDay", "El Consumo " + feedPerAnimalPerDayDouble + "gr por ave para encasetamiento Hembra cumple con la tolerancia", "", "", true);
                     }
                 } else if (encasetamiento.equals("M")) {
                     if (feedPerAnimalPerDayDouble < validacionMacho.getConsumoMinimo() || feedPerAnimalPerDayDouble > validacionMacho.getConsumoMaximo()) {
                         this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "FeedPerAnimalPerDay",
-                                "El Consumo " + feedPerAnimalPerDayDouble + " con encasetamiento Macho para la edad " + edad + " no cumple con la tabla de Tolerancia", "", "", false);
+                                "El Consumo " + feedPerAnimalPerDayDouble + "gr por ave con encasetamiento Macho no cumple con la tabla de Tolerancia", "", "", false);
                         existeError = true;
                     } else {
-                        this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "FeedPerAnimalPerDay", "El consumo para encasetamiento Macho cumple con la tolerancia", "", "", true);
+                        this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "FeedPerAnimalPerDay", "El Consumo " + feedPerAnimalPerDayDouble + "gr por ave para encasetamiento Macho cumple con la tolerancia", "", "", true);
                     }
                 } else {
                     this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "FeedPerAnimalPerDay",
-                            "No se logro obtener el sexo de encasetamiento para realizar la comparativa de tolerancia. Variables: BroilerGroupTotalStockedFemale y BroilerGroupTotalStockedMale.", "", "", false);
+                            "No se logro obtener el sexo de encasetamiento para realizar la comparativa de tolerancia. Variables: BroilerGroupTotalStockedFemale Male y AsHatched.", "", "", false);
                     existeError = true;
                 }
             }
             //Validacion SiloName
-            List<TablaAlimento> arAlimentosSilo = arAlimentos.stream().filter(x -> x.getMaterial().equals(siloName)).collect(Collectors.toList());
-            if (arAlimentosSilo.isEmpty()) {
+            String[] splitSiloName = siloName.split("-");
+            if (splitSiloName.length < 2) {
                 this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "SiloName1",
-                        "No se encontro alimento asociado al material " + siloName, "", "", false);
+                        "El SiloName1 no contiene la estructura 'Material-Lote' - SiloName1 => " + siloName, "", "", false);
             } else {
-                Double cantidadMaterial = arAlimentosSilo.stream().mapToDouble(x -> x.getInventario()).sum();
-                if (cantidadMaterial < feedTotalPerDayDouble) {
-                    this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "FeedTotalPerDay",
-                            "El consumo total por dia: " + feedTotalPerDayDouble + " es mayor que el inventario: " + cantidadMaterial.toString(), "", "", false);
+                String materialConsumo = splitSiloName[0].trim();
+                String loteConsumo = splitSiloName[1].trim();
+                TablaAlimento alimentoSilo = arAlimentos.stream().filter(x -> x.getMaterial().equals(materialConsumo) && x.getLote().equals(loteConsumo)).findFirst().orElse(null);
+//                List<TablaAlimento> arAlimentosSilo = arAlimentos.stream().filter(x -> x.getMaterial().equals(materialConsumo) && x.getLote().equals(loteConsumo)).collect(Collectors.toList());
+//                if (arAlimentosSilo.isEmpty()) {
+                if (alimentoSilo == null) {
+                    this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "SiloName1",
+                            "No se encontro alimento asociado al material " + materialConsumo + " y lote " + loteConsumo, "", "", false);
                 } else {
-                    if (!existeError) {
-                        datoTecnicoSap.setMaterial(siloName);
-                        datoTecnicoSap.setAplicaRegistro(true);
-
-                        Double alimentoRestante = feedTotalPerDayDouble;
-                        for (int i = 0; i < arAlimentosSilo.size() && alimentoRestante > 0; i++) {
-                            TablaAlimento alimento = arAlimentosSilo.get(i);
-
-                            DatoTecnicoSap datoTecnicoAlimento = new DatoTecnicoSap();
-                            datoTecnicoAlimento.setIdEncaseta(datoTecnicoSap.getIdEncaseta());
-                            datoTecnicoAlimento.setFecha(datoTecnicoSap.getFecha());
-                            datoTecnicoAlimento.setAplicaRegistro(true);
-                            datoTecnicoAlimento.setGalpon(datoTecnicoSap.getGalpon());
-                            datoTecnicoAlimento.setDivision(datoTecnicoSap.getDivision());
-                            datoTecnicoAlimento.setSeleccion(datoTecnicoSap.getSeleccion());
-                            datoTecnicoAlimento.setMaterial(datoTecnicoSap.getMaterial());
-                            if (alimento.getInventario() >= alimentoRestante) {
-                                if (i == 0) {
-                                    datoTecnicoSap.setConsumo(alimentoRestante * 1000);
-                                    datoTecnicoSap.setCharg(alimento.getLoteCompleto());
-                                } else {
-                                    datoTecnicoAlimento.setConsumo(alimentoRestante * 1000);
-                                    datoTecnicoAlimento.setCharg(alimento.getLoteCompleto());
-                                    arDatosTecnicosExtras.add(datoTecnicoAlimento);
-                                }
-                                alimentoRestante = 0.0;
-                            } else {
-                                alimentoRestante = alimentoRestante - alimento.getInventario();
-                                if (i == 0) {
-                                    datoTecnicoSap.setConsumo(alimento.getInventario() * 1000);
-                                    datoTecnicoSap.setCharg(alimento.getLoteCompleto());
-                                } else {
-                                    datoTecnicoAlimento.setConsumo(alimento.getInventario() * 1000);
-                                    datoTecnicoAlimento.setCharg(alimento.getLoteCompleto());
-                                    arDatosTecnicosExtras.add(datoTecnicoAlimento);
-                                }
-                            }
-                        }
-
+//                    Double cantidadMaterial = arAlimentosSilo.stream().mapToDouble(x -> x.getInventario()).sum();
+                    Double cantidadMaterial = alimentoSilo.getInventario();
+                    if (cantidadMaterial < feedTotalPerDayDouble) {
                         this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "FeedTotalPerDay",
-                                "Se registra consumo total por dia: " + feedTotalPerDayDouble + " para la edad " + edad, "", "", true);
-                        this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "SiloName1",
-                                "Se registra material de consumo: " + siloName, "", "", true);
+                                "El consumo total por dia: " + feedTotalPerDayDouble + " es mayor que el inventario: " + cantidadMaterial.toString(), "", "", false);
+                    } else {
+                        if (!existeError) {
+                            datoTecnicoSap.setMaterial(materialConsumo);
+                            datoTecnicoSap.setAplicaRegistro(true);
+
+                            Double alimentoRestante = feedTotalPerDayDouble;
+                            datoTecnicoSap.setConsumo(alimentoRestante * 1000);
+                            datoTecnicoSap.setCharg(alimentoSilo.getLoteCompleto());
+//                            for (int i = 0; i < arAlimentosSilo.size() && alimentoRestante > 0; i++) {
+//                                TablaAlimento alimento = arAlimentosSilo.get(i);
+//
+//                                DatoTecnicoSap datoTecnicoAlimento = new DatoTecnicoSap();
+//                                datoTecnicoAlimento.setIdEncaseta(datoTecnicoSap.getIdEncaseta());
+//                                datoTecnicoAlimento.setFecha(datoTecnicoSap.getFecha());
+//                                datoTecnicoAlimento.setAplicaRegistro(true);
+//                                datoTecnicoAlimento.setGalpon(datoTecnicoSap.getGalpon());
+//                                datoTecnicoAlimento.setDivision(datoTecnicoSap.getDivision());
+//                                datoTecnicoAlimento.setSeleccion(datoTecnicoSap.getSeleccion());
+//                                datoTecnicoAlimento.setMaterial(datoTecnicoSap.getMaterial());
+//                                if (alimento.getInventario() >= alimentoRestante) {
+//                                    if (i == 0) {
+//                                        datoTecnicoSap.setConsumo(alimentoRestante * 1000);
+//                                        datoTecnicoSap.setCharg(alimento.getLoteCompleto());
+//                                    } else {
+//                                        datoTecnicoAlimento.setConsumo(alimentoRestante * 1000);
+//                                        datoTecnicoAlimento.setCharg(alimento.getLoteCompleto());
+//                                        arDatosTecnicosExtras.add(datoTecnicoAlimento);
+//                                    }
+//                                    alimentoRestante = 0.0;
+//                                } else {
+//                                    alimentoRestante = alimentoRestante - alimento.getInventario();
+//                                    if (i == 0) {
+//                                        datoTecnicoSap.setConsumo(alimento.getInventario() * 1000);
+//                                        datoTecnicoSap.setCharg(alimento.getLoteCompleto());
+//                                    } else {
+//                                        datoTecnicoAlimento.setConsumo(alimento.getInventario() * 1000);
+//                                        datoTecnicoAlimento.setCharg(alimento.getLoteCompleto());
+//                                        arDatosTecnicosExtras.add(datoTecnicoAlimento);
+//                                    }
+//                                }
+//                            }
+
+                            this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "FeedTotalPerDay",
+                                    "Se registra consumo total por dia: " + feedTotalPerDayDouble, "", "", true);
+                            this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "SiloName1",
+                                    "Se registra material de consumo: " + materialConsumo + " y lote: " + loteConsumo, "", "", true);
+                        } else if (edad == 1) {
+                            datoTecnicoSap.setMaterial(materialConsumo);
+                            datoTecnicoSap.setAplicaRegistro(true);
+                            Double alimentoRestante = feedTotalPerDayDouble;
+                            datoTecnicoSap.setConsumo(alimentoRestante * 1000);
+                            datoTecnicoSap.setCharg(alimentoSilo.getLoteCompleto());
+                            this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "FeedTotalPerDay",
+                                    "Se registra consumo total por dia: " + feedTotalPerDayDouble, "", "", true);
+                            this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "SiloName1",
+                                    "Se registra material de consumo: " + materialConsumo + " y lote: " + loteConsumo, "", "", true);
+                        }
                     }
                 }
             }
@@ -411,6 +459,7 @@ public class Proceso {
         String broilerGroupWeightMale = this.obtenerVariableDeHash(hashDatosGranja, granja, galpon, "BroilerGroupWeightMale");
         String broilerGroupTotalStockedFemale = this.obtenerVariableDeHash(hashDatosGranja, granja, galpon, "BroilerGroupTotalStockedFemale");
         String broilerGroupTotalStockedMale = this.obtenerVariableDeHash(hashDatosGranja, granja, galpon, "BroilerGroupTotalStockedMale");
+        String broilerGroupTotalStockedAsHatched = this.obtenerVariableDeHash(hashDatosGranja, granja, galpon, "BroilerGroupTotalStockedAsHatched");
 
         Double birdScaleWeight1Double = (Objects.isNull(birdScaleWeight1)) ? 0.0 : Double.valueOf(birdScaleWeight1);
         Double birdScaleWeight2Double = (Objects.isNull(birdScaleWeight2)) ? 0.0 : Double.valueOf(birdScaleWeight2);
@@ -418,14 +467,15 @@ public class Proceso {
         Double broilerGroupWeightMaleDouble = (Objects.isNull(broilerGroupWeightMale)) ? 0.0 : Double.valueOf(broilerGroupWeightMale);
         Double broilerGroupTotalStockedFemaleDouble = Objects.isNull(broilerGroupTotalStockedFemale) ? 0.0 : Double.valueOf(broilerGroupTotalStockedFemale);
         Double broilerGroupTotalStockedMaleDouble = Objects.isNull(broilerGroupTotalStockedMale) ? 0.0 : Double.valueOf(broilerGroupTotalStockedMale);
+        Double broilerGroupTotalStockedAsHatchedDouble = Objects.isNull(broilerGroupTotalStockedAsHatched) ? 0.0 : Double.valueOf(broilerGroupTotalStockedAsHatched);
 
         String encasetamiento = "";
-        if (broilerGroupTotalStockedFemaleDouble > 0 && broilerGroupTotalStockedMaleDouble > 0) {
-            encasetamiento = "X";
+        if (broilerGroupTotalStockedMaleDouble > 0) {
+            encasetamiento = "M";
         } else if (broilerGroupTotalStockedFemaleDouble > 0) {
             encasetamiento = "H";
-        } else if (broilerGroupTotalStockedMaleDouble > 0) {
-            encasetamiento = "M";
+        } else if (broilerGroupTotalStockedAsHatchedDouble > 0) {
+            encasetamiento = "X";
         }
 
         if (birdScaleWeight1Double == 0 && birdScaleWeight2Double == 0 && broilerGroupWeightFemaleDouble == 0 && broilerGroupWeightMaleDouble == 0) {
@@ -438,36 +488,36 @@ public class Proceso {
             if (encasetamiento.equals("X")) {
                 if (totalWeigth < validacionMixto.getPesoMinimo() || totalWeigth > validacionMixto.getPesoMaximo()) {
                     this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BirdScaleWeight1|BirdScaleWeight2",
-                            "El Peso " + totalWeigth + " para la edad " + edad + " no cumple con la tabla de Tolerancia Mixta", "", "", false);
+                            "El Peso " + totalWeigth + "gr no cumple con la tabla de Tolerancia Mixta", "", "", false);
                 } else {
                     datoTecnicoSap.setPeso(totalWeigth.intValue());
                     datoTecnicoSap.setAplicaRegistro(true);
                     this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BirdScaleWeight1|BirdScaleWeight2",
-                            "Se registra peso Mixto " + totalWeigth + " para la edad " + edad, "", "", true);
+                            "Se registra peso Mixto: " + totalWeigth + "gr", "", "", true);
                 }
             } else if (encasetamiento.equals("H")) {
                 if (totalWeigth < validacionHembra.getPesoMinimo() || totalWeigth > validacionHembra.getPesoMaximo()) {
                     this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BirdScaleWeight1|BirdScaleWeight2",
-                            "El Peso " + totalWeigth + " para la edad " + edad + " no cumple con la tabla de Tolerancia Hembra", "", "", false);
+                            "El Peso " + totalWeigth + "gr no cumple con la tabla de Tolerancia Hembra", "", "", false);
                 } else {
                     datoTecnicoSap.setPeso(totalWeigth.intValue());
                     datoTecnicoSap.setAplicaRegistro(true);
                     this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BirdScaleWeight1|BirdScaleWeight2",
-                            "Se registra peso Hembra " + totalWeigth + " para la edad " + edad, "", "", true);
+                            "Se registra peso Hembra: " + totalWeigth + "gr", "", "", true);
                 }
             } else if (encasetamiento.equals("M")) {
                 if (totalWeigth < validacionMacho.getPesoMinimo() || totalWeigth > validacionMacho.getPesoMaximo()) {
                     this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BirdScaleWeight1|BirdScaleWeight2",
-                            "El Peso " + totalWeigth + " para la edad " + edad + " no cumple con la tabla de Tolerancia Macho", "", "", false);
+                            "El Peso " + totalWeigth + "gr no cumple con la tabla de Tolerancia Macho", "", "", false);
                 } else {
                     datoTecnicoSap.setPeso(totalWeigth.intValue());
                     datoTecnicoSap.setAplicaRegistro(true);
                     this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BirdScaleWeight1|BirdScaleWeight2",
-                            "Se registra peso Macho " + totalWeigth + " para la edad " + edad, "", "", true);
+                            "Se registra peso Macho: " + totalWeigth + "gr", "", "", true);
                 }
             } else {
                 this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BirdScaleWeight1|BirdScaleWeight2",
-                        "No se logro obtener el sexo de encasetamiento para realizar la comparativa de tolerancia. Variables: BroilerGroupTotalStockedFemale y BroilerGroupTotalStockedMale.", "", "", false);
+                        "No se logro obtener el sexo de encasetamiento para realizar la comparativa de tolerancia. Variables: BroilerGroupTotalStockedFemale Male y AsHatched.", "", "", false);
             }
         } else {
             Double totalWeigth;
@@ -476,35 +526,35 @@ public class Proceso {
                 if (encasetamiento.equals("X")) {
                     if (totalWeigth < validacionMixto.getPesoMinimo() || totalWeigth > validacionMixto.getPesoMaximo()) {
                         this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BroilerGroupWeightFemale|BroilerGroupWeightMale",
-                                "El Peso " + totalWeigth + " para la edad " + edad + " no cumple con la tabla de Tolerancia Mixta", "", "", false);
+                                "El Peso " + totalWeigth + "gr no cumple con la tabla de Tolerancia Mixta", "", "", false);
                     } else {
                         datoTecnicoSap.setPeso(totalWeigth.intValue());
                         datoTecnicoSap.setAplicaRegistro(true);
                         this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BroilerGroupWeightFemale|BroilerGroupWeightMale",
-                                "Se registra peso Mixto " + totalWeigth + " para la edad " + edad, "", "", true);
+                                "Se registra peso Mixto: " + totalWeigth + "gr", "", "", true);
                     }
                 }
             } else if (broilerGroupWeightFemaleDouble > 0) {
                 totalWeigth = broilerGroupWeightFemaleDouble;
                 if (totalWeigth < validacionHembra.getPesoMinimo() || totalWeigth > validacionHembra.getPesoMaximo()) {
                     this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BroilerGroupWeightFemale",
-                            "El Peso " + totalWeigth + " para la edad " + edad + " no cumple con la tabla de Tolerancia", "", "", false);
+                            "El Peso " + totalWeigth + "gr no cumple con la tabla de Tolerancia", "", "", false);
                 } else {
                     datoTecnicoSap.setPeso(totalWeigth.intValue());
                     datoTecnicoSap.setAplicaRegistro(true);
                     this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BroilerGroupWeightFemale",
-                            "Se registra peso Hembra " + totalWeigth + " para la edad " + edad, "", "", true);
+                            "Se registra peso Hembra: " + totalWeigth + "gr", "", "", true);
                 }
             } else if (broilerGroupWeightMaleDouble > 0) {
                 totalWeigth = broilerGroupWeightMaleDouble;
                 if (totalWeigth < validacionMacho.getPesoMinimo() || totalWeigth > validacionMacho.getPesoMaximo()) {
                     this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BroilerGroupWeightMale",
-                            "El Peso " + totalWeigth + " para la edad " + edad + " no cumple con la tabla de Tolerancia", "", "", false);
+                            "El Peso " + totalWeigth + "gr no cumple con la tabla de Tolerancia", "", "", false);
                 } else {
                     datoTecnicoSap.setPeso(totalWeigth.intValue());
                     datoTecnicoSap.setAplicaRegistro(true);
                     this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BroilerGroupWeightMale",
-                            "Se registra peso Macho " + totalWeigth + " para la edad " + edad, "", "", true);
+                            "Se registra peso Macho: " + totalWeigth + "gr", "", "", true);
                 }
             } else if (broilerGroupWeightFemaleDouble == 0 && broilerGroupWeightMaleDouble == 0) {
                 this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BroilerGroupWeightFemale|BroilerGroupWeightMale",
@@ -524,19 +574,23 @@ public class Proceso {
 //        ValidacionTolerancia validacionMacho = mapValidaciones.get("M");
 //        ValidacionTolerancia validacionHembra = mapValidaciones.get("H");
 //        ValidacionTolerancia validacionMixto = mapValidaciones.get("X");
-        String broilerGroupMortalityFemale = this.obtenerVariableDeHash(hashDatosGranja, granja, galpon, "BroilerGroupMortalityFemale");
-        String broilerGroupMortalityMale = this.obtenerVariableDeHash(hashDatosGranja, granja, galpon, "BroilerGroupMortalityMale");
+//        String broilerGroupMortalityFemale = this.obtenerVariableDeHash(hashDatosGranja, granja, galpon, "BroilerGroupMortalityFemale");
+//        String broilerGroupMortalityMale = this.obtenerVariableDeHash(hashDatosGranja, granja, galpon, "BroilerGroupMortalityMale");
+//        String broilerGroupMortalityAsHatched = this.obtenerVariableDeHash(hashDatosGranja, granja, galpon, "BroilerGroupMortalityAsHatched");
         String birdsDeadCulledPerDayFemale = this.obtenerVariableDeHash(hashDatosGranja, granja, galpon, "BirdsDeadCulledPerDayFemale");
         String birdsDeadCulledPerDayMale = this.obtenerVariableDeHash(hashDatosGranja, granja, galpon, "BirdsDeadCulledPerDayMale");
+        String birdsDeadCulledPerDayAsHatched = this.obtenerVariableDeHash(hashDatosGranja, granja, galpon, "BirdsDeadCulledPerDayAsHatched");
 
-        Double broilerGroupMortalityFemaleDouble = (Objects.isNull(broilerGroupMortalityFemale) ? 0.0 : Double.valueOf(broilerGroupMortalityFemale));
-        Double broilerGroupMortalityMaleDouble = (Objects.isNull(broilerGroupMortalityMale) ? 0.0 : Double.valueOf(broilerGroupMortalityMale));
+//        Double broilerGroupMortalityFemaleDouble = (Objects.isNull(broilerGroupMortalityFemale) ? 0.0 : Double.valueOf(broilerGroupMortalityFemale));
+//        Double broilerGroupMortalityMaleDouble = (Objects.isNull(broilerGroupMortalityMale) ? 0.0 : Double.valueOf(broilerGroupMortalityMale));
+//        Double broilerGroupMortalityAsHatchedDouble = (Objects.isNull(broilerGroupMortalityAsHatched) ? 0.0 : Double.valueOf(broilerGroupMortalityAsHatched));
         Double birdsDeadCulledPerDayFemaleDouble = (Objects.isNull(birdsDeadCulledPerDayFemale) ? 0.0 : Double.valueOf(birdsDeadCulledPerDayFemale));
         Double birdsDeadCulledPerDayMaleDouble = (Objects.isNull(birdsDeadCulledPerDayMale) ? 0.0 : Double.valueOf(birdsDeadCulledPerDayMale));
+        Double birdsDeadCulledPerDayAsHatchedDouble = (Objects.isNull(birdsDeadCulledPerDayAsHatched) ? 0.0 : Double.valueOf(birdsDeadCulledPerDayAsHatched));
 
 //        if (Objects.isNull(broilerGroupMortalityFemale) && Objects.isNull(broilerGroupMortalityMale) && Objects.isNull(birdsDeadCulledPerDayFemale) && Objects.isNull(birdsDeadCulledPerDayMale)) {
-        if (Objects.isNull(birdsDeadCulledPerDayFemale) && Objects.isNull(birdsDeadCulledPerDayMale)) {
-            this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BirdsDeadCulledPerDayFemale|BirdsDeadCulledPerDayMale",
+        if (Objects.isNull(birdsDeadCulledPerDayFemale) && Objects.isNull(birdsDeadCulledPerDayMale) && Objects.isNull(birdsDeadCulledPerDayAsHatched)) {
+            this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BirdsDeadCulledPerDayFemale|BirdsDeadCulledPerDayMale|BirdsDeadCulledPerDayAsHatched",
                     "Ausencia de variable", "", "", false);
         } else {
 //            if ((Objects.isNull(broilerGroupMortalityFemale) || Objects.isNull(birdsDeadCulledPerDayFemale)) && (Objects.isNull(broilerGroupMortalityMale) || Objects.isNull(birdsDeadCulledPerDayMale))) {
@@ -557,18 +611,19 @@ public class Proceso {
 //                this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, String.join("|", variablesAusentes),
 //                        "Ausencia de variable", "", "", false);
 //            } else {
-            if (!Objects.isNull(birdsDeadCulledPerDayFemale) && !Objects.isNull(birdsDeadCulledPerDayMale)) {
-                Double mortalidadMixto = (broilerGroupMortalityFemaleDouble + broilerGroupMortalityMaleDouble) / 2;
+            if (!Objects.isNull(birdsDeadCulledPerDayAsHatched)) {
+//                Double mortalidadMixto = broilerGroupMortalityAsHatchedDouble;
 //                if (mortalidadMixto < validacionMixto.getMortalidadMinima() || mortalidadMixto > validacionMixto.getMortalidadMaxima()) {
 //                    this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BroilerGroupMortalityFemale|BirdsDeadCulledPerDayFemale|BroilerGroupMortalityMale|BirdsDeadCulledPerDayMale",
 //                            "La Mortalidad Mixta " + mortalidadMixto + " para la edad " + edad + " no cumple con la tabla de Tolerancia", "", "", false);
 //                } else {
-                Double birdsDeadCulledPerDayMixtoDouble = birdsDeadCulledPerDayFemaleDouble + birdsDeadCulledPerDayMaleDouble;
+                Double birdsDeadCulledPerDayMixtoDouble = birdsDeadCulledPerDayAsHatchedDouble;
 
                 datoTecnicoSap.setMortalidad(birdsDeadCulledPerDayMixtoDouble.intValue());
                 datoTecnicoSap.setAplicaRegistro(true);
-                this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BirdsDeadCulledPerDayFemale|BirdsDeadCulledPerDayMale",
-                        "Se registra mortalidad Mixta " + mortalidadMixto + " para la edad " + edad, "", "", true);
+                this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BirdsDeadCulledPerDayAsHatched",
+                        "Se registra mortalidad Mixta Total aves: " + birdsDeadCulledPerDayAsHatched,
+                        "", "", true);
 //                }
             } else if (!Objects.isNull(birdsDeadCulledPerDayFemale)) {
 //                if (broilerGroupMortalityFemaleDouble < validacionHembra.getMortalidadMinima() || broilerGroupMortalityFemaleDouble > validacionHembra.getMortalidadMaxima()) {
@@ -578,7 +633,8 @@ public class Proceso {
                 datoTecnicoSap.setMortalidad(birdsDeadCulledPerDayFemaleDouble.intValue());
                 datoTecnicoSap.setAplicaRegistro(true);
                 this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BirdsDeadCulledPerDayFemale",
-                        "Se registra mortalidad Hembra: " + broilerGroupMortalityFemale + " para la edad " + edad, "", "", true);
+                        "Se registra mortalidad Hembra Total aves: " + birdsDeadCulledPerDayFemale,
+                        "", "", true);
 //                }
             } else if (!Objects.isNull(birdsDeadCulledPerDayMale)) {
 //                if (broilerGroupMortalityMaleDouble < validacionMacho.getMortalidadMinima() || broilerGroupMortalityMaleDouble > validacionMacho.getMortalidadMaxima()) {
@@ -588,7 +644,8 @@ public class Proceso {
                 datoTecnicoSap.setMortalidad(birdsDeadCulledPerDayMaleDouble.intValue());
                 datoTecnicoSap.setAplicaRegistro(true);
                 this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BirdsDeadCulledPerDayMale",
-                        "Se registra mortalidad Macho " + broilerGroupMortalityMaleDouble + " para la edad " + edad, "", "", true);
+                        "Se registra mortalidad Macho Total aves: " + birdsDeadCulledPerDayMale,
+                        "", "", true);
 //                }
             }
         }
@@ -629,18 +686,18 @@ public class Proceso {
 
     public HashMap<String, Object> obtenerAlimentoXOpSap(String opsap) {
         //PARA PRUEBAS NO MAS
-        if (opsap.equals("000170023397")) {
-            //Dardanelos 2
-            opsap = "000170023021";
-        } else if (opsap.equals("000170024000")) {
-            //Dardanelos 1 
-            opsap = "000170023022";
-        } else if (opsap.equals("000170024140")) {
-            //Santa clara 3
-            opsap = "000170023023";
-        } else {
-            opsap = "000170023023";
-        }
+//        if (opsap.equals("000170023397")) {
+//            //Dardanelos 2
+//            opsap = "000170023021";
+//        } else if (opsap.equals("000170024000")) {
+//            //Dardanelos 1 
+//            opsap = "000170023022";
+//        } else if (opsap.equals("000170024140")) {
+//            //Santa clara 3
+//            opsap = "000170023023";
+//        } else {
+//            opsap = "000170024140";
+//        }
 //        }
         //FIN DE PRUEBAS -------
         ArrayList<TablaAlimento> arTablaAlimentos = new ArrayList<>();
@@ -648,8 +705,8 @@ public class Proceso {
 
         HashMap<String, Object> hashRespuesta = new HashMap<>();
         try {
-//            JCoDestination destination = JCoDestinationManager.getDestination("config/ConexionSAP");
-            JCoDestination destination = JCoDestinationManager.getDestination("config/ConexionSAP_calidad");
+            JCoDestination destination = JCoDestinationManager.getDestination("config/ConexionSAP");
+//            JCoDestination destination = JCoDestinationManager.getDestination("config/ConexionSAP_calidad");
             JCoFunction funcion = destination.getRepository().getFunction("ZGWS_ALIMENTO");
             funcion.getImportParameterList().setValue("I_OP", opsap);
             funcion.execute(destination);
@@ -678,8 +735,8 @@ public class Proceso {
     public ArrayList<RetornoDatosTecnicos> registrarDatosTecnicosSap(ArrayList<DatoTecnicoSap> arDatosTecnicos) {
         ArrayList<RetornoDatosTecnicos> arRetornoDatosTecnicos = new ArrayList<>();
         try {
-//            JCoDestination destination = JCoDestinationManager.getDestination("config/ConexionSAP");
-            JCoDestination destination = JCoDestinationManager.getDestination("config/ConexionSAP_calidad");
+            JCoDestination destination = JCoDestinationManager.getDestination("config/ConexionSAP");
+//            JCoDestination destination = JCoDestinationManager.getDestination("config/ConexionSAP_calidad");
             JCoFunction funcion = destination.getRepository().getFunction("ZBPGR_BUSQ_DATOSTECNICOS");
 
             funcion.getImportParameterList().setValue("P_APP", "X");
@@ -726,13 +783,14 @@ public class Proceso {
         try ( PreparedStatement ps = conexion.prepareStatement("select * from tblcorreosnotificacion")) {
             ResultSet res = ps.executeQuery();
             while (res.next()) {
-//                arCorreosNotificacion.add(new TblCorreosNotificacion(res.getString("correo"), res.getString("error")));
+                arCorreosNotificacion.add(new TblCorreosNotificacion(res.getString("correo"), res.getString("error")));
             }
         }
-        arCorreosNotificacion.add(new TblCorreosNotificacion("jmunoz@macpollo.com", ""));
-        arCorreosNotificacion.add(new TblCorreosNotificacion("lidertdprod@macpollo.com", ""));
-        arCorreosNotificacion.add(new TblCorreosNotificacion("jmunoz@macpollo.com", "X"));
-        arCorreosNotificacion.add(new TblCorreosNotificacion("lidertdprod@macpollo.com", "X"));
+//        arCorreosNotificacion.forEach(System.out::println);
+//        arCorreosNotificacion.add(new TblCorreosNotificacion("jmunoz@macpollo.com", ""));
+//        arCorreosNotificacion.add(new TblCorreosNotificacion("lidertdprod@macpollo.com", ""));
+//        arCorreosNotificacion.add(new TblCorreosNotificacion("jmunoz@macpollo.com", "X"));
+//        arCorreosNotificacion.add(new TblCorreosNotificacion("lidertdprod@macpollo.com", "X"));
 
         HashMap<String, String> hashMapVariableSignificado = new HashMap();
         hashMapVariableSignificado.put("FeedTotalPerDay", "Alimentacion total por dia");
@@ -744,14 +802,17 @@ public class Proceso {
         hashMapVariableSignificado.put("BroilerGroupWeightMale", "Peso grupo aves macho");
         hashMapVariableSignificado.put("BroilerGroupMortalityFemale", "Porcentaje mortalidad Hembra");
         hashMapVariableSignificado.put("BroilerGroupMortalityMale", "Porcentaje mortalidad Macho");
+        hashMapVariableSignificado.put("BroilerGroupMortalityAsHatched", "Porcentaje mortalidad Mixto");
         hashMapVariableSignificado.put("BroilerGroupTotalStockedFemale", "Stock encasetado aves hembra");
         hashMapVariableSignificado.put("BroilerGroupTotalStockedMale", "Stock encasetado aves macho");
+        hashMapVariableSignificado.put("BroilerGroupTotalStockedAsHatched", "Stock encasetado aves mixto");
         hashMapVariableSignificado.put("BirdsDeadCulledPerDayFemale", "Aves hembra muertas por dia");
         hashMapVariableSignificado.put("BirdsDeadCulledPerDayMale", "Aves macho muertas por dia");
+        hashMapVariableSignificado.put("BirdsDeadCulledPerDayAsHatched", "Aves mixtas muertas por dia");
 
         try {
-//            JCoDestination destination = JCoDestinationManager.getDestination("config/ConexionSAP");
-            JCoDestination destination = JCoDestinationManager.getDestination("config/ConexionSAP_calidad");
+            JCoDestination destination = JCoDestinationManager.getDestination("config/ConexionSAP");
+//            JCoDestination destination = JCoDestinationManager.getDestination("config/ConexionSAP_calidad");
             JCoFunction funcion = destination.getRepository().getFunction("ZGWS_LOGGRANJASTECNI");
 
             funcion.getImportParameterList().setValue("P_APP", "X");
@@ -775,27 +836,50 @@ public class Proceso {
                     datosGranjas.setValue("DOCSAPTECNICO", logEnvioSap.getDocSapTecnico());
                     datosGranjas.setValue("DOCSAPINVENT", logEnvioSap.getDocSapInventario());
                     datosGranjas.setValue("ESTADO", logEnvioSap.getEstado() ? "X" : "");
+                    datosGranjas.setValue("RETORNOSAP", logEnvioSap.getRespuestaenviosap());
                 }
             });
 
             //Hago map para dejar solo los datos que necesito, luego filtro por Exitosos y los incluyo para enviar a SAP
             arLogEnvioSap.stream().map(x -> {
-                return new LogEnvioSap(x.getGranjaCompleto(), x.getGranja(), x.getGalpon(), x.getLote(), x.getEdad(), "",
-                        x.getFecha(), "", x.getDocSapTecnico(), x.getDocSapInventario(), x.getEstado());
+                return new LogEnvioSap(x.getGranjaCompleto(), x.getGranja(), x.getGalpon(), x.getLote(), x.getEdad(), x.getVariable(),
+                        x.getFecha(), x.getObservacion(), x.getDocSapTecnico(), x.getDocSapInventario(), x.getEstado(), x.getRespuestaenviosap());
             }).filter(x -> x.getEstado()).distinct().forEach(logEnvioSap -> {
-                datosGranjas.appendRow();
-                datosGranjas.setValue("GRANJA", logEnvioSap.getGranja());
-                datosGranjas.setValue("NOMBRE_GRANJA", logEnvioSap.getGranjaCompleto());
-                datosGranjas.setValue("GALPON", logEnvioSap.getGalpon());
-                datosGranjas.setValue("CHARG", logEnvioSap.getLote());
-                datosGranjas.setValue("EDAD", logEnvioSap.getEdad());
-                datosGranjas.setValue("VARIAB_GRANJA", "");
-                datosGranjas.setValue("FECHA", logEnvioSap.getFecha());
-                datosGranjas.setValue("NOBSERVACION", logEnvioSap.getObservacion());
-                datosGranjas.setValue("DOCSAPTECNICO", logEnvioSap.getDocSapTecnico());
-                datosGranjas.setValue("DOCSAPINVENT", logEnvioSap.getDocSapInventario());
-                datosGranjas.setValue("ESTADO", logEnvioSap.getEstado() ? "X" : "");
+                String[] splitVariables = logEnvioSap.getVariable().split("\\|");
+                for (String variableEnvio : splitVariables) {
+                    datosGranjas.appendRow();
+                    datosGranjas.setValue("GRANJA", logEnvioSap.getGranja());
+                    datosGranjas.setValue("NOMBRE_GRANJA", logEnvioSap.getGranjaCompleto());
+                    datosGranjas.setValue("GALPON", logEnvioSap.getGalpon());
+                    datosGranjas.setValue("CHARG", logEnvioSap.getLote());
+                    datosGranjas.setValue("EDAD", logEnvioSap.getEdad());
+                    datosGranjas.setValue("VARIAB_GRANJA", variableEnvio);
+                    datosGranjas.setValue("VARIAB_TEXTO", hashMapVariableSignificado.get(variableEnvio));
+                    datosGranjas.setValue("FECHA", logEnvioSap.getFecha());
+                    datosGranjas.setValue("NOBSERVACION", logEnvioSap.getObservacion());
+                    datosGranjas.setValue("DOCSAPTECNICO", logEnvioSap.getDocSapTecnico());
+                    datosGranjas.setValue("DOCSAPINVENT", logEnvioSap.getDocSapInventario());
+                    datosGranjas.setValue("ESTADO", logEnvioSap.getEstado() ? "X" : "");
+                    datosGranjas.setValue("RETORNOSAP", logEnvioSap.getRespuestaenviosap());
+                }
             });
+//            System.out.println("------------------------------------------------------");
+//            for (int x = 0; x < datosGranjas.getNumRows(); x++) {
+//                datosGranjas.setRow(x);
+//                System.out.println("Granja => " + datosGranjas.getValue("GRANJA"));
+//                System.out.println("NOMBRE_GRANJA => " + datosGranjas.getValue("NOMBRE_GRANJA"));
+//                System.out.println("GALPON => " + datosGranjas.getValue("GALPON"));
+//                System.out.println("CHARG => " + datosGranjas.getValue("CHARG"));
+//                System.out.println("EDAD => " + datosGranjas.getValue("EDAD"));
+//                System.out.println("VARIAB_GRANJA => " + datosGranjas.getValue("VARIAB_GRANJA"));
+//                System.out.println("VARIAB_TEXTO => " + datosGranjas.getValue("VARIAB_TEXTO"));
+//                System.out.println("FECHA => " + datosGranjas.getValue("FECHA"));
+//                System.out.println("NOBSERVACION => " + datosGranjas.getValue("NOBSERVACION"));
+//                System.out.println("DOCSAPTECNICO => " + datosGranjas.getValue("DOCSAPTECNICO"));
+//                System.out.println("DOCSAPINVENT => " + datosGranjas.getValue("DOCSAPINVENT"));
+//                System.out.println("ESTADO => " + datosGranjas.getValue("ESTADO"));
+//                System.out.println("RETORNOSAP => " + datosGranjas.getValue("RETORNOSAP"));
+//            }
 
             JCoTable tCorreos = funcion.getTableParameterList().getTable("T_CORREOSNOTI");
             for (TblCorreosNotificacion correoNotificacion : arCorreosNotificacion) {

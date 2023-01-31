@@ -39,7 +39,7 @@ public class TblCorreosNotificacion {
 
     @Override
     public String toString() {
-        return super.toString(); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
+        return "Correo => " + this.correo + ", Error => " + this.error;
     }
 
 }

@@ -50,6 +50,22 @@ public class LogEnvioSap {
         this.respuestaenviosap = "";
     }
 
+    public LogEnvioSap(String granjaCompleto, String granja, String galpon, String lote, Integer edad, String variable, Date fecha, String observacion,
+            String docSapTecnico, String docSapInventario, boolean estado, String respuestaSap) {
+        this.granjaCompleto = granjaCompleto;
+        this.granja = granja;
+        this.galpon = galpon;
+        this.lote = lote;
+        this.edad = edad;
+        this.variable = variable;
+        this.fecha = fecha;
+        this.observacion = observacion;
+        this.docSapTecnico = docSapTecnico;
+        this.docSapInventario = docSapInventario;
+        this.estado = estado;
+        this.respuestaenviosap = respuestaSap;
+    }
+
     public String getGranjaCompleto() {
         return granjaCompleto;
     }

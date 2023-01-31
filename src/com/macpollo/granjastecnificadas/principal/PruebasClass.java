@@ -21,8 +21,8 @@ public class PruebasClass {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        String x = "SiloName1";
-        String[] split = x.split("\\|");
+        String x = "5358-9326";
+        String[] split = x.split("-");
         System.out.println(Arrays.toString(split));
 //        ArrayList<RetornoDatosTecnicos> arRetornoLog = new ArrayList<>();
 //        RetornoDatosTecnicos x = new RetornoDatosTecnicos();
