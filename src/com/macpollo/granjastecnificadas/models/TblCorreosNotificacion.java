@@ -12,13 +12,15 @@ public class TblCorreosNotificacion {
 
     private String correo;
     private String error;
+    private Integer sociedad;
 
     public TblCorreosNotificacion() {
     }
 
-    public TblCorreosNotificacion(String correo, String error) {
+    public TblCorreosNotificacion(String correo, String error, Integer sociedad) {
         this.correo = correo;
         this.error = error;
+        this.sociedad = sociedad;
     }
 
     public String getCorreo() {
@@ -37,9 +39,17 @@ public class TblCorreosNotificacion {
         this.error = error;
     }
 
+    public Integer getSociedad() {
+        return sociedad;
+    }
+
+    public void setSociedad(Integer sociedad) {
+        this.sociedad = sociedad;
+    }
+
     @Override
     public String toString() {
-        return "Correo => " + this.correo + ", Error => " + this.error;
+        return "Correo => " + this.correo + ", Error => " + this.error + ", Sociedad => " + this.sociedad;
     }
 
 }
