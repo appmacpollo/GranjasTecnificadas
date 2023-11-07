@@ -578,7 +578,7 @@ public class Proceso {
                 datoTecnicoSap.setSeleccion(birdsNumberCulledPerReasonPerDayAbnormalMaleDouble.intValue());
                 datoTecnicoSap.setAplicaRegistro(true);
                 this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BirdsNumberCulledPerReasonPerDayAbnormalMale",
-                        "Se registra Seleccion Macho Total aves: " + birdsDeadCulledSinceMidnightMale,
+                        "Se registra Seleccion Macho Total aves: " + birdsNumberCulledPerReasonPerDayAbnormalMale,
                         "", "", true);
             }
         }
