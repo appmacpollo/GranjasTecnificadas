@@ -157,10 +157,6 @@ public class Proceso {
                 System.out.println("No se encontraron registros de datos para la granja " + granja);
             }
             for (String galpon : arGalpones) {
-                //Para procesar solo esas granjas TEMPORALMENTE MIENTRAS SE REALIZAN UNAS PRUEBAS
-                if(granja.equals("E603") && (galpon.equals("9") || galpon.equals("12"))){
-                    continue;
-                }
                 //DatoTecnico a registrar en SAP
                 ArrayList<DatoTecnicoSap> arDatosTecnicosExtras = new ArrayList<>();
                 DatoTecnicoSap datoTecnicoSap = new DatoTecnicoSap();
@@ -542,6 +538,13 @@ public class Proceso {
                 this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BirdsDeadCulledSinceMidnightAsHatched",
                         "Se registra mortalidad Sin Sexar Total aves: " + birdsDeadCulledSinceMidnightAsHatched,
                         "", "", true);
+            } else if (!Objects.isNull(birdsDeadCulledSinceMidnightFemale) && !Objects.isNull(birdsDeadCulledSinceMidnightMale)) {
+                Integer sumatoriaAvesMuertas = birdsDeadCulledSinceMidnightFemaleDouble.intValue() + birdsDeadCulledSinceMidnightMaleDouble.intValue();
+                datoTecnicoSap.setMortalidad(sumatoriaAvesMuertas);
+                datoTecnicoSap.setAplicaRegistro(true);
+                this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BirdsDeadCulledSinceMidnight",
+                        "Se registra mortalidad Macho y Hembra Total aves: " + sumatoriaAvesMuertas,
+                        "", "", true);
             } else if (!Objects.isNull(birdsDeadCulledSinceMidnightFemale)) {
                 datoTecnicoSap.setMortalidad(birdsDeadCulledSinceMidnightFemaleDouble.intValue());
                 datoTecnicoSap.setAplicaRegistro(true);
@@ -567,6 +570,13 @@ public class Proceso {
                 datoTecnicoSap.setAplicaRegistro(true);
                 this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BirdsNumberCulledPerReasonPerDayAbnormalAsHatched",
                         "Se registra Seleccion Sin Sexar Total aves: " + birdsNumberCulledPerReasonPerDayAbnormalAsHatched,
+                        "", "", true);
+            } else if (!Objects.isNull(birdsNumberCulledPerReasonPerDayAbnormalFemale) && !Objects.isNull(birdsNumberCulledPerReasonPerDayAbnormalMale)) {
+                Integer sumatoriaAvesSeleccion = birdsNumberCulledPerReasonPerDayAbnormalFemaleDouble.intValue() + birdsNumberCulledPerReasonPerDayAbnormalMaleDouble.intValue();
+                datoTecnicoSap.setMortalidad(sumatoriaAvesSeleccion);
+                datoTecnicoSap.setAplicaRegistro(true);
+                this.registrarLogEnvioSap(arLogEnvioSap, loteGalponVaribale, "BirdsNumberCulledPerReasonPerDayAbnormal",
+                        "Se registra Selección Macho y Hembra Total aves: " + sumatoriaAvesSeleccion,
                         "", "", true);
             } else if (!Objects.isNull(birdsNumberCulledPerReasonPerDayAbnormalFemale)) {
                 datoTecnicoSap.setSeleccion(birdsNumberCulledPerReasonPerDayAbnormalFemaleDouble.intValue());
@@ -878,7 +888,7 @@ public class Proceso {
                     tCorreos.setValue("ERROR", correoNotificacion.getError());
                 }
 
-            funcion.execute(destination);
+                funcion.execute(destination);
                 JCoTable tableReturn = funcion.getTableParameterList().getTable("IT_RETURN");
                 if (sociedad.equals(0)) {
                     for (int i = 0; i < tableReturn.getNumRows(); i++) {
