@@ -53,7 +53,7 @@ public class Proceso {
 
     public boolean procesarDatosGranjasTecnificadas() throws SQLException {
         //Consumo 
-        List<String> arParametrosConsulta = new ArrayList<String>(Arrays.asList("FeedTotalPerDay", "SiloName1", "FeedPerAnimalPerDay"));
+        List<String> arParametrosConsulta = new ArrayList<>(Arrays.asList("FeedTotalPerDay", "SiloName1", "FeedPerAnimalPerDay"));
         //Peso
         arParametrosConsulta.addAll(Arrays.asList("BirdScaleWeight1", "BirdScaleWeight2", "BroilerGroupWeightFemale", "BroilerGroupWeightMale"));
         //Mortalidad
@@ -441,7 +441,7 @@ public class Proceso {
         } else if (broilerGroupTotalStockedFemaleDouble > 0) {
             encasetamiento = "H";
         } else if (broilerGroupTotalStockedMaleDouble > 0) {
-            encasetamiento = "X";
+            encasetamiento = "M";
         }
 
         if (birdScaleWeight1Double == 0 && birdScaleWeight2Double == 0 && broilerGroupWeightFemaleDouble == 0 && broilerGroupWeightMaleDouble == 0) {
@@ -674,6 +674,12 @@ public class Proceso {
         return hashRespuesta;
     }
 
+    /**
+     * Registra los datos tecnicos en SAP utiliza la misma BAPI que la App de granjas
+     * 
+     * @param arDatosTecnicos array con los datos a registrar
+     * @return 
+     */
     public ArrayList<RetornoDatosTecnicos> registrarDatosTecnicosSap(ArrayList<DatoTecnicoSap> arDatosTecnicos) {
         ArrayList<RetornoDatosTecnicos> arRetornoDatosTecnicos = new ArrayList<>();
         try {
@@ -744,7 +750,7 @@ public class Proceso {
 
         ArrayList<RetornoDatosTecnicos> arRetornoLog = new ArrayList<>();
         ArrayList<TblCorreosNotificacion> arCorreosNotificacion = new ArrayList<>();
-        try (PreparedStatement ps = conexion.prepareStatement("select * from tblcorreosnotificacion")) {
+        try (PreparedStatement ps = conexion.prepareStatement("select * from tblcorreosnotificacion")) { // contiene los correos de las persoas a las que hay que enviar mensaje
             ResultSet res = ps.executeQuery();
             while (res.next()) {
                 arCorreosNotificacion.add(new TblCorreosNotificacion(res.getString("correo"), res.getString("error"), res.getInt("sociedad")));
